@@ -8,52 +8,37 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-
 @RestController
-@RequestMapping("/api/foods")
+@RequestMapping("/restaurants/{restaurantId}/menu")
 public class FoodController {
+
     @Autowired
     private FoodService foodService;
 
-    @GetMapping("")
-    public List<Food> getAllFoods() {
-        return foodService.getAllFoods();
+    @GetMapping
+    public ResponseEntity<List<Food>> getAllFoodByRestaurantId(@PathVariable Long restaurantId) {
+        List<Food> foodList = foodService.getAllFoodByRestaurantId(restaurantId);
+        return ResponseEntity.ok(foodList);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Food> getFoodById(@PathVariable("id") Long id) {
-        Optional<Food> food = foodService.getFoodById(id);
-        return food.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @PostMapping("")
-    public ResponseEntity<Food> createFood(@Valid @RequestBody Food food) {
-        Food savedFood = foodService.saveFood(food);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedFood);
+    @PostMapping
+    public ResponseEntity<Food> createFood(@PathVariable Long restaurantId, @Valid @RequestBody Food food) {
+        Food createdFood = foodService.createFood(restaurantId, food);
+        return ResponseEntity.created(URI.create("/restaurants/" + restaurantId + "/menu/" + createdFood.getId())).body(createdFood);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Food> updateFood(@PathVariable("id") Long id, @Valid @RequestBody Food food) {
-        Optional<Food> existingFood = foodService.getFoodById(id);
-        if (existingFood.isPresent()) {
-            food.setId(id);
-            Food updatedFood = foodService.saveFood(food);
-            return ResponseEntity.ok(updatedFood);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Food> updateFood(@PathVariable Long restaurantId, @PathVariable Long id, @Valid @RequestBody Food food) {
+        Food updatedFood = foodService.updateFood(restaurantId, id, food);
+        return ResponseEntity.ok(updatedFood);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFood(@PathVariable("id") Long id) {
-        Optional<Food> existingFood = foodService.getFoodById(id);
-        if (existingFood.isPresent()) {
-            foodService.deleteFood(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteFood(@PathVariable Long restaurantId, @PathVariable Long id) {
+        foodService.deleteFoodById(restaurantId, id);
+        return ResponseEntity.noContent().build();
     }
 }

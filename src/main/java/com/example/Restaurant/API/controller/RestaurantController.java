@@ -8,52 +8,38 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/restaurants")
+@RequestMapping("/restaurants")
 public class RestaurantController {
+
     @Autowired
     private RestaurantService restaurantService;
 
-    @GetMapping("")
-    public List<Restaurant> getAllRestaurants() {
-        return restaurantService.getAllRestaurants();
-    }
-
     @GetMapping("/{id}")
-    public ResponseEntity<Restaurant> getRestaurantById(@PathVariable("id") Long id) {
-        Optional<Restaurant> restaurant = restaurantService.getRestaurantById(id);
-        return restaurant.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<Restaurant> getRestaurantById(@PathVariable Long id) {
+        Restaurant restaurant = restaurantService.getRestaurantById(id);
+        return ResponseEntity.ok(restaurant);
     }
 
-    @PostMapping("")
+    @PostMapping
     public ResponseEntity<Restaurant> createRestaurant(@Valid @RequestBody Restaurant restaurant) {
-        Restaurant savedRestaurant = restaurantService.saveRestaurant(restaurant);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedRestaurant);
+        Restaurant createdRestaurant = restaurantService.createRestaurant(restaurant);
+        return ResponseEntity.created(URI.create("/restaurants/" + createdRestaurant.getId())).body(createdRestaurant);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Restaurant> updateRestaurant(@PathVariable("id") Long id, @Valid @RequestBody Restaurant restaurant) {
-        Optional<Restaurant> existingRestaurant = restaurantService.getRestaurantById(id);
-        if (existingRestaurant.isPresent()) {
-            restaurant.setId(id);
-            Restaurant updatedRestaurant = restaurantService.saveRestaurant(restaurant);
-            return ResponseEntity.ok(updatedRestaurant);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Restaurant> updateRestaurant(@PathVariable Long id, @Valid @RequestBody Restaurant restaurant) {
+        Restaurant updatedRestaurant = restaurantService.updateRestaurant(id, restaurant);
+        return ResponseEntity.ok(updatedRestaurant);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRestaurant(@PathVariable("id") Long id) {
-        Optional<Restaurant> existingRestaurant = restaurantService.getRestaurantById(id);
-        if (existingRestaurant.isPresent()) {
-            restaurantService.deleteRestaurantById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteRestaurant(@PathVariable Long id) {
+        restaurantService.deleteRestaurantById(id);
+        return ResponseEntity.noContent().build();
     }
 }
